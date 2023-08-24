@@ -4,7 +4,7 @@ from scraper import check_product_id
 from scraper import check_price
 from scraper import check_date
 
-
+# Function that save info of Amazon products to JSON file
 def save_to_file():
     product_title = check_product_title()
     product_id = check_product_id()
