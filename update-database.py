@@ -1,6 +1,13 @@
 # Import necessary libraries
 import MySQLdb
 import json
+from os import environ as env
+from dotenv import load_dotenv
+
+
+# Call the function to load variables from .env file into the environment
+load_dotenv()
+
 
 # Function to create a table in the database for product history
 def create_table():
@@ -14,7 +21,7 @@ def create_table():
             host="localhost",
             user="root",
             port=3306,
-            passwd="Adamabdul@paypal4040",
+            passwd=env["DB_PASSWORD"],
             db="price_monitor",
         )
         cursor = db.cursor()
@@ -60,7 +67,7 @@ def update_table():
             host="localhost",
             user="root",
             port=3306,
-            passwd="Adamabdul@paypal4040",
+            passwd=env["DB_PASSWORD"],
             db="price_monitor",
         )
         cursor = db.cursor()
@@ -105,7 +112,7 @@ def get_newest_row():
             host="localhost",
             user="root",
             port=3306,
-            passwd="Adamabdul@paypal4040",
+            passwd=env["DB_PASSWORD"],
             db="price_monitor",
         )
         cursor = db.cursor()
@@ -146,7 +153,7 @@ def get_price_change():  # sourcery skip: for-append-to-extend, inline-variable
             host="localhost",
             user="root",
             port=3306,
-            passwd="Adamabdul@paypal4040",
+            passwd=env["DB_PASSWORD"],
             db="price_monitor",
         )
         
@@ -204,7 +211,7 @@ def update_db_table():
             host="localhost",
             user="root",
             port=3306,
-            passwd="Adamabdul@paypal4040",
+            passwd=env["DB_PASSWORD"],
             db="price_monitor",
         )
         cursor = db.cursor()

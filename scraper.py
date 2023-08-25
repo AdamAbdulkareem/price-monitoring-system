@@ -6,8 +6,8 @@ from datetime import datetime
 
 # Define the URL of the Amazon product page you want to scrape
 
-URL = "https://www.amazon.com/dp/B09MSRJ97Y"
-# URL = "https://www.amazon.com/dp/B09XBS3S5J"
+# URL = "https://www.amazon.com/dp/B09MSRJ97Y"
+URL = "https://www.amazon.com/dp/B09XBS3S5J"
 # URL = "https://www.amazon.com/dp/B0BDTWQ2DW"
 # URL = "https://www.amazon.com/dp/B0863TXGM3"
 #URL = "https://www.amazon.com/dp/B099VMT8VZ"
@@ -19,13 +19,15 @@ headers = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
     "Upgrade-Insecure-Requests": "1",
 }
+
+
 try:
     # Send an HTTP GET request to the specified URL with the headers
     page = requests.get(URL, headers=headers)
     
     # Parse the HTML content of the page using BeautifulSoup
     soup = BeautifulSoup(page.content, "html.parser")
-
+    
     
     # Define a function to check and extract the product title
     def check_product_title():
@@ -35,9 +37,13 @@ try:
         Returns:
             str: The product title.
         """
-        product_title =  soup.find("span", id="productTitle").text.strip()
-        print(f"Product Title:{str(product_title)}")
-        return product_title
+        if page.status_code == 200:
+            print(page.status_code)
+            product_title =  soup.find("span", id="productTitle").text.strip()
+            print(f"Product Title:{str(product_title)}")
+            return product_title
+        else:
+            print("Failed to retrieve the page. Status code:", page.status_code)
 
     # Define a function to check and extract the product ID
     def check_product_id():
@@ -97,3 +103,5 @@ except AttributeError as e:
 except Exception as e:
     # Handle unexpected exceptions
     print("An unexpected error occurred:", e)
+    
+check_product_title()
