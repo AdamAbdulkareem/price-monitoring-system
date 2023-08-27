@@ -6,10 +6,10 @@ from datetime import datetime
 
 # Define the URL of the Amazon product page you want to scrape
 
-# URL = "https://www.amazon.com/dp/B09MSRJ97Y"
-URL = "https://www.amazon.com/dp/B09XBS3S5J"
-# URL = "https://www.amazon.com/dp/B0BDTWQ2DW"
-# URL = "https://www.amazon.com/dp/B0863TXGM3"
+#URL = "https://www.amazon.com/dp/B09MSRJ97Y"
+#URL = "https://www.amazon.com/dp/B09XBS3S5J"
+#URL = "https://www.amazon.com/dp/B0BDTWQ2DW"
+URL = "https://www.amazon.com/dp/B0863TXGM3"
 #URL = "https://www.amazon.com/dp/B099VMT8VZ"
 
 # Define headers to mimic a web browser's request
