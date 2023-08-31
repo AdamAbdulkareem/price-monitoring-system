@@ -1,15 +1,18 @@
 # Import necessary libraries
 from bs4 import BeautifulSoup
 import requests
+import asyncio
 from datetime import date
 from datetime import datetime
+from playwright.async_api import async_playwright
+from playwright_stealth import stealth_async
 
 # Define the URL of the Amazon product page you want to scrape
 
 #URL = "https://www.amazon.com/dp/B09MSRJ97Y"
-#URL = "https://www.amazon.com/dp/B09XBS3S5J"
+URL = "https://www.amazon.com/dp/B09XBS3S5J"
 #URL = "https://www.amazon.com/dp/B0BDTWQ2DW"
-URL = "https://www.amazon.com/dp/B0863TXGM3"
+#URL = "https://www.amazon.com/dp/B0863TXGM3"
 #URL = "https://www.amazon.com/dp/B099VMT8VZ"
 
 # Define headers to mimic a web browser's request
@@ -20,7 +23,40 @@ headers = {
     "Upgrade-Insecure-Requests": "1",
 }
 
+amazon_website = "https://www.amazon.com"
+urls_metadata = {
+    amazon_website: {
+        "search_field_query": 'input[name="field-keywords"]',
+        "search_button_query": 'input[value="Go"]',
+        "product_selector": "div.s-card-container"
+    }
+}
 
+async def main(url, search_text):
+    metadata = urls_metadata.get(url)
+    async with async_playwright() as pw:
+        browser = await pw.chromium.launch(headless=True)
+        page = await browser.new_page()    
+        await stealth_async(page)
+        await page.goto(url, timeout=1200000)
+        search_page = await search(metadata, page, search_text)
+        await search_page.screenshot(path="amazon-product.png")
+        
+async def search(metadata, page, search_text):
+    search_field_query = metadata.get("search_field_query")
+    search_button_query = metadata.get("search_button_query")
+    
+    search_box = await page.wait_for_selector(search_field_query)
+    await search_box.type(search_text)
+    button = await page.wait_for_selector(search_button_query)
+    await button.click()
+    await page.wait_for_load_state('load')
+    return page
+    
+    
+
+
+    
 try:
     # Send an HTTP GET request to the specified URL with the headers
     page = requests.get(URL, headers=headers)
@@ -104,4 +140,6 @@ except Exception as e:
     # Handle unexpected exceptions
     print("An unexpected error occurred:", e)
     
-check_product_title()
+    
+if __name__ == "__main__":
+    asyncio.run(main(amazon_website, "Macbook M2 pro"))
