@@ -2,18 +2,10 @@
 from bs4 import BeautifulSoup
 import requests
 import asyncio
-from datetime import date
-from datetime import datetime
+from datetime import date, datetime
 from playwright.async_api import async_playwright
 from playwright_stealth import stealth_async
-
-# Define the URL of the Amazon product page you want to scrape
-
-#URL = "https://www.amazon.com/dp/B09MSRJ97Y"
-URL = "https://www.amazon.com/dp/B09XBS3S5J"
-#URL = "https://www.amazon.com/dp/B0BDTWQ2DW"
-#URL = "https://www.amazon.com/dp/B0863TXGM3"
-#URL = "https://www.amazon.com/dp/B099VMT8VZ"
+from urllib.parse import urlparse
 
 # Define headers to mimic a web browser's request
 headers = {
@@ -32,114 +24,108 @@ urls_metadata = {
     }
 }
 
+# Define a function to check and extract the product title
+def check_product_title(soup, page):
+    if page.status_code == 200:
+        product_title =  soup.find("span", id="productTitle").text.strip()
+        return product_title
+    else:
+        print("Failed to retrieve the page. Status code:", page.status_code)
+
+# Define a function to check and extract the product ID
+def check_product_id(soup):
+    product_id_element = soup.find(
+        "div", id="title_feature_div", attrs={"data-csa-c-asin": True}
+    )
+    return product_id_element["data-csa-c-asin"]
+
+# Define a function to check and extract the product price
+def check_price(soup):
+    price_string = soup.find("span", class_="a-offscreen").text.strip("$")
+    return float(price_string.replace(",", ""))
+
+# Define a function to check and extract product keywords
+def check_keywords(soup):
+    return soup.find("div", id="featurebullets_feature_div").text.strip()
+
+# Define a function to get the current date and time
+def check_date():
+    current_date = date.today().strftime("%a, %B %d %Y")
+    current_time = datetime.now().strftime("%H:%M:%S %p")
+    return current_date, current_time
+
 async def main(url, search_text):
     metadata = urls_metadata.get(url)
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(headless=True)
-        page = await browser.new_page()    
+        page = await browser.new_page()
         await stealth_async(page)
-        await page.goto(url, timeout=1200000)
+        await page.goto(url, timeout=120000)
         search_page = await search(metadata, page, search_text)
         await search_page.screenshot(path="amazon-product.png")
-        
+        await get_products(page)
+
+        try:
+            # Send an HTTP GET request to the specified URL with the headers
+            page = requests.get(product_page_url, headers=headers)
+
+            # Parse the HTML content of the page using BeautifulSoup
+            soup = BeautifulSoup(page.content, "html.parser")
+
+            check_product_title(soup, page)
+            check_product_id(soup)
+            check_price(soup)
+            check_keywords(soup)
+
+        except requests.exceptions.RequestException as e:
+            # Handle exceptions related to making the HTTP request
+            print("Error in the request:", e)
+
+        except AttributeError as e:
+            # Handle exceptions related to parsing the HTML content
+            print("Error in parsing HTML:", e)
+
+        except Exception as e:
+            # Handle unexpected exceptions
+            print("An unexpected error occurred:", e)
+
 async def search(metadata, page, search_text):
     search_field_query = metadata.get("search_field_query")
     search_button_query = metadata.get("search_button_query")
-    
+
     search_box = await page.wait_for_selector(search_field_query)
     await search_box.type(search_text)
     button = await page.wait_for_selector(search_button_query)
     await button.click()
     await page.wait_for_load_state('load')
     return page
-    
-    
 
+async def get_products(page):
+    arr_products = []
+    product_selector = 'div[data-asin][data-component-type="s-search-result"]'
+    product_divs = await page.query_selector_all(product_selector)
 
-    
-try:
-    # Send an HTTP GET request to the specified URL with the headers
-    page = requests.get(URL, headers=headers)
-    
-    # Parse the HTML content of the page using BeautifulSoup
-    soup = BeautifulSoup(page.content, "html.parser")
-    
-    
-    # Define a function to check and extract the product title
-    def check_product_title():
-        """
-        Extracts and returns the product title from the Amazon product page.
+    for product in product_divs:
+        link_tag = await product.query_selector('a.a-link-normal')
+        span_tag = await product.query_selector('span.a-size-medium.a-color-base.a-text-normal')
+        span_text = await span_tag.inner_text()
+        arr_products.append(span_text)
 
-        Returns:
-            str: The product title.
-        """
-        if page.status_code == 200:
-            print(page.status_code)
-            product_title =  soup.find("span", id="productTitle").text.strip()
-            print(f"Product Title:{str(product_title)}")
-            return product_title
-        else:
-            print("Failed to retrieve the page. Status code:", page.status_code)
+        await select_product(page, product)
+        return
 
-    # Define a function to check and extract the product ID
-    def check_product_id():
-        """
-        Extracts and returns the product ID from the Amazon product page.
+async def select_product(category_page, product):
+    link_tag = await product.query_selector('a.a-link-normal')
+    await link_tag.click()
+    await category_page.wait_for_load_state('load')
+    await category_page.screenshot(path="amazon-product_1.png")
+    # Parse the URL
+    parsed_url = urlparse(category_page.url)
 
-        Returns:
-            str: The product ID.
-        """
-        product_id_element = soup.find(
-            "div", id="title_feature_div", attrs={"data-csa-c-asin": True}
-        )
-        return product_id_element["data-csa-c-asin"]
-    
-    # Define a function to check and extract the product price
-    def check_price():
-        """
-        Extracts and returns the product price from the Amazon product page.
+    # Extract the useful part (without query parameters)
+    useful_part = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
+    global product_page_url
+    product_page_url = useful_part
 
-        Returns:
-            float: The product price as a floating-point number.
-        """
-        price_string = soup.find("span", class_="a-offscreen").text.strip("$")
-        return float(price_string.replace(",", ""))
-    
-    # Define a function to check and extract product keywords
-    def check_keywords():
-        """
-        Extracts and returns the product keywords or features from the Amazon product page.
-
-        Returns:
-            str: The product keywords or features.
-        """
-        return soup.find("div", id="featurebullets_feature_div").text.strip()
-    
-    # Define a function to get the current date and time
-    def check_date():
-        """
-        Gets the current date and time.
-
-        Returns:
-            tuple: A tuple containing the current date and time in string format.
-                (date, time)
-        """
-        current_date = date.today().strftime("%a, %B %d %Y")
-        current_time = datetime.now().strftime("%H:%M:%S %p")
-        return current_date, current_time
-
-except requests.exceptions.RequestException as e:
-    # Handle exceptions related to making the HTTP request
-    print("Error in the request:", e)
-
-except AttributeError as e:
-    # Handle exceptions related to parsing the HTML content
-    print("Error in parsing HTML:", e)
-
-except Exception as e:
-    # Handle unexpected exceptions
-    print("An unexpected error occurred:", e)
-    
-    
 if __name__ == "__main__":
-    asyncio.run(main(amazon_website, "Macbook M2 pro"))
+    asyncio.run(main(amazon_website, "Sony WH-1000MS4"))
