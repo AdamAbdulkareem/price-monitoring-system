@@ -1,5 +1,6 @@
 # Import necessary libraries
 from bs4 import BeautifulSoup
+import json
 import requests
 import asyncio
 from datetime import date, datetime
@@ -24,11 +25,12 @@ urls_metadata = {
     }
 }
 
+
+
 # Define a function to check and extract the product title
 def check_product_title(soup, page):
     if page.status_code == 200:
-        product_title =  soup.find("span", id="productTitle").text.strip()
-        return product_title
+        return soup.find("span", id="productTitle").text.strip()
     else:
         print("Failed to retrieve the page. Status code:", page.status_code)
 
@@ -55,6 +57,8 @@ def check_date():
     return current_date, current_time
 
 async def main(url, search_text):
+    global soup, page 
+    
     metadata = urls_metadata.get(url)
     async with async_playwright() as pw:
         browser = await pw.chromium.launch(headless=True)
@@ -65,29 +69,52 @@ async def main(url, search_text):
         await search_page.screenshot(path="amazon-product.png")
         await get_products(page)
 
-        try:
-            # Send an HTTP GET request to the specified URL with the headers
-            page = requests.get(product_page_url, headers=headers)
+        # Send an HTTP GET request to the specified URL with the headers
+        page = requests.get(product_page_url, headers=headers)
 
-            # Parse the HTML content of the page using BeautifulSoup
-            soup = BeautifulSoup(page.content, "html.parser")
+        # Parse the HTML content of the page using BeautifulSoup
+        soup = BeautifulSoup(page.content, "html.parser")
+            
+        product_title = check_product_title(soup, page)
+        product_id = check_product_id(soup)
+        price = check_price(soup)
+        date_info = check_date()
+        
+        # This function save the product info to a json file
+        def save_to_file():
+            product_data = {
+                "ProductName": product_title,
+                "ProductId": product_id,
+                "Price": price,
+                "Date_Time": date_info,
+            }
+            
+            try:
+                # Try to read the existing JSON data from the file
+                with open("product_data.json", mode="r", encoding="utf-8") as json_file:
+                    data = json.load(json_file)
+            except FileNotFoundError:
+                # If the file doesn't exist (first time), initialize an empty dictionary
+                data = {}
+        
+            except json.JSONDecodeError:
+                # If there's an error in decoding the JSON, handle it appropriately
+                print("Error: Unable to decode the existing JSON data")
+                return
+    
+            # Update the data with the new product_data
+            data[product_id] = product_data
 
-            check_product_title(soup, page)
-            check_product_id(soup)
-            check_price(soup)
-            check_keywords(soup)
-
-        except requests.exceptions.RequestException as e:
-            # Handle exceptions related to making the HTTP request
-            print("Error in the request:", e)
-
-        except AttributeError as e:
-            # Handle exceptions related to parsing the HTML content
-            print("Error in parsing HTML:", e)
-
-        except Exception as e:
-            # Handle unexpected exceptions
-            print("An unexpected error occurred:", e)
+            try:
+                # Write the updated data back to the file
+                with open("product_data.json", mode="w", encoding="utf-8") as json_file:
+                    json.dump(data, json_file)
+            
+            except Exception as e:
+                # Handle any unexpected errors during file writing
+                print("Error: Unable to write to product_data.json:", e)
+                
+        save_to_file()
 
 async def search(metadata, page, search_text):
     search_field_query = metadata.get("search_field_query")
