@@ -17,6 +17,7 @@ def scrape_amazon():
     product_name = data.get("product_name")
     # Call the main function from scraper.py
     asyncio.run(main(amazon_website, product_name))
+    return jsonify({"message": "Scraping completed successfully"})
     
 @app.route("/fetch_product_history", methods=["GET"])
 def fetch_product_history():

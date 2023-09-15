@@ -148,6 +148,3 @@ async def select_product(category_page, product):
     useful_part = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
     global product_page_url
     product_page_url = useful_part
-
-# if __name__ == "__main__":
-#     asyncio.run(main(amazon_website, "ROG Strix G15 Gaming Desktop PC, Intel Core i7-12700F"))
