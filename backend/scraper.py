@@ -65,17 +65,51 @@ async def main(url, search_text):
         await search_page.screenshot(path="amazon-product.png")
         await get_products(page)
 
-        # Send an HTTP GET request to the specified URL with the headers
-        page = requests.get(product_page_url, headers=headers)
+        # # Send an HTTP GET request to the specified URL with the headers
+        # page = requests.get(product_page_url, headers=headers)
 
-        # Parse the HTML content of the page using BeautifulSoup
-        soup = BeautifulSoup(page.content, "html.parser")
+        # if page.status_code == 200:
+        #     # Parse the HTML content of the page using BeautifulSoup
+        #     soup = BeautifulSoup(page.content, "html.parser")
             
-        product_title = check_product_title(soup, page)
-        product_id = check_product_id(soup)
-        price = check_price(soup)
-        date_info = check_date()
+        #     product_title = check_product_title(soup, page)
+        #     product_id = check_product_id(soup)
+        #     price = check_price(soup)
+        #     date_info = check_date()
+        #     print(f"Product Name: {product_title}, Product Id: {product_id}, Price: {price}, Date: {date_info}")
+        # else:
+        #     print("Not Successful")
         
+        # Maximum number of retries
+        max_retries = 5
+        retry_count = 0
+
+        while retry_count < max_retries:
+            try:
+                # Send an HTTP GET request to the specified URL with the headers
+                page = requests.get(product_page_url, headers=headers)
+                
+                # Parse the HTML content of the page using BeautifulSoup
+                soup = BeautifulSoup(page.content, "html.parser")
+            
+                product_title = check_product_title(soup, page)
+                product_id = check_product_id(soup)
+                price = check_price(soup)
+                date_info = check_date()
+
+                # Check if product_id and product_title are not None or empty
+                if product_title is not None and product_id:
+                    break  # Break out of the loop if both values are valid
+
+                # If either product_id or product_title is None or empty, retry
+                retry_count += 1
+            except Exception as e:
+                print(f"An error occurred: {str(e)}")
+                retry_count += 1
+
+        if retry_count >= max_retries:
+            print("Max retries reached. Unable to fetch valid product information.")
+
         # This function save the product info to a json file
         def save_to_file():
             product_data = {

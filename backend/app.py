@@ -4,7 +4,7 @@ from .scraper import main
 from .fetchDatabase import fetch_dbProduct
 
 
-app = Flask(__name__, template_folder="../frontend", static_url_path="/frontend", static_folder="frontend")
+app = Flask(__name__, template_folder="../frontend/templates", static_url_path="/static", static_folder="frontend/static")
 
 @app.route("/")
 def index():
