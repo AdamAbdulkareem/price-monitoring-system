@@ -1,10 +1,12 @@
 import asyncio
 from flask import Flask, request, jsonify, render_template
+from flask_cors import CORS
 from .scraper import main
 from .fetchDatabase import fetch_dbProduct
 
 
-app = Flask(__name__, template_folder="../frontend/templates", static_url_path="/static", static_folder="frontend/static")
+app = Flask(__name__, template_folder="../frontend/templates", static_url_path="/static", static_folder="../frontend/static")
+CORS(app)
 
 @app.route("/")
 def index():
