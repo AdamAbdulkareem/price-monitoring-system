@@ -63,88 +63,72 @@ async def main(url, search_text):
         await page.goto(url, timeout=300000)
         search_page = await search(metadata, page, search_text)
         await search_page.screenshot(path="amazon-product.png")
-        await get_products(page)
+        return await get_products(page)
+    
+        # max_retries = 5
+        # retry_count = 0
 
-        # # Send an HTTP GET request to the specified URL with the headers
-        # page = requests.get(product_page_url, headers=headers)
-
-        # if page.status_code == 200:
-        #     # Parse the HTML content of the page using BeautifulSoup
-        #     soup = BeautifulSoup(page.content, "html.parser")
-            
-        #     product_title = check_product_title(soup, page)
-        #     product_id = check_product_id(soup)
-        #     price = check_price(soup)
-        #     date_info = check_date()
-        #     print(f"Product Name: {product_title}, Product Id: {product_id}, Price: {price}, Date: {date_info}")
-        # else:
-        #     print("Not Successful")
-        
-        # Maximum number of retries
-        max_retries = 5
-        retry_count = 0
-
-        while retry_count < max_retries:
-            try:
-                # Send an HTTP GET request to the specified URL with the headers
-                page = requests.get(product_page_url, headers=headers)
+        # while retry_count < max_retries:
+        #     try:
+        #         # Send an HTTP GET request to the specified URL with the headers
+        #         page = requests.get(product_page_url, headers=headers)
                 
-                # Parse the HTML content of the page using BeautifulSoup
-                soup = BeautifulSoup(page.content, "html.parser")
+        #         # Parse the HTML content of the page using BeautifulSoup
+        #         soup = BeautifulSoup(page.content, "html.parser")
             
-                product_title = check_product_title(soup, page)
-                product_id = check_product_id(soup)
-                price = check_price(soup)
-                date_info = check_date()
+        #         product_title = check_product_title(soup, page)
+        #         product_id = check_product_id(soup)
+        #         price = check_price(soup)
+        #         date_info = check_date()
 
-                # Check if product_id and product_title are not None or empty
-                if product_title is not None and product_id:
-                    break  # Break out of the loop if both values are valid
+        #         # Check if product_id and product_title are not None or empty
+        #         if product_title is not None and product_id:
+        #             break  # Break out of the loop if both values are valid
 
-                # If either product_id or product_title is None or empty, retry
-                retry_count += 1
-            except Exception as e:
-                print(f"An error occurred: {str(e)}")
-                retry_count += 1
+        #         # If either product_id or product_title is None or empty, retry
+        #         retry_count += 1
+        #     except Exception as e:
+        #         print(f"An error occurred: {str(e)}")
+        #         retry_count += 1
 
-        if retry_count >= max_retries:
-            print("Max retries reached. Unable to fetch valid product information.")
+        # if retry_count >= max_retries:
+        #     print("Max retries reached. Unable to fetch valid product information.")
 
         # This function save the product info to a json file
-        def save_to_file():
-            product_data = {
-                "ProductName": product_title,
-                "ProductId": product_id,
-                "Price": price,
-                "Date_Time": date_info,
-            }
+        # def save_to_file():
+        #     product_data = {
+        #         "ProductName": product_title,
+        #         "ProductId": product_id,
+        #         "Price": price,
+        #         "Date_Time": date_info,
+        #     }
             
-            try:
-                # Try to read the existing JSON data from the file
-                with open("product_data.json", mode="r", encoding="utf-8") as json_file:
-                    data = json.load(json_file)
-            except FileNotFoundError:
-                # If the file doesn't exist (first time), initialize an empty dictionary
-                data = {}
+        #     try:
+        #         # Try to read the existing JSON data from the file
+        #         with open("product_data.json", mode="r", encoding="utf-8") as json_file:
+        #             data = json.load(json_file)
+        #     except FileNotFoundError:
+        #         # If the file doesn't exist (first time), initialize an empty dictionary
+        #         data = {}
         
-            except json.JSONDecodeError:
-                # If there's an error in decoding the JSON, handle it appropriately
-                print("Error: Unable to decode the existing JSON data")
-                return
+        #     except json.JSONDecodeError:
+        #         # If there's an error in decoding the JSON, handle it appropriately
+        #         print("Error: Unable to decode the existing JSON data")
+        #         return
     
-            # Update the data with the new product_data
-            data[product_id] = product_data
+        #     # Update the data with the new product_data
+        #     data[product_id] = product_data
 
-            try:
-                # Write the updated data back to the file
-                with open("product_data.json", mode="w", encoding="utf-8") as json_file:
-                    json.dump(data, json_file)
+        #     try:
+        #         # Write the updated data back to the file
+        #         with open("product_data.json", mode="w", encoding="utf-8") as json_file:
+        #             json.dump(data, json_file)
             
-            except Exception as e:
-                # Handle any unexpected errors during file writing
-                print("Error: Unable to write to product_data.json:", e)
+        #     except Exception as e:
+        #         # Handle any unexpected errors during file writing
+        #         print("Error: Unable to write to product_data.json:", e)
                 
-        save_to_file()
+        # save_to_file()
 
 async def search(metadata, page, search_text):
     search_field_query = metadata.get("search_field_query")
@@ -165,20 +149,24 @@ async def get_products(page):
     for product in product_divs:
         span_tag = await product.query_selector('span.a-size-medium.a-color-base.a-text-normal')
         span_text = await span_tag.inner_text()
-        arr_products.append(span_text)
+        data_asin = await product.get_attribute('data-asin')
+        product_info = {
+            "product_title" : span_text,
+            "product_id" : data_asin
+        }
+        arr_products.append(product_info)
+        # await select_product(page, product)
+    return arr_products
 
-        await select_product(page, product)
-        return
+# async def select_product(category_page, product):
+#     link_tag = await product.query_selector('a.a-link-normal')
+#     await link_tag.click()
+#     await category_page.wait_for_load_state('load')
+#     await category_page.screenshot(path="amazon-product_1.png")
+#     # Parse the URL
+#     parsed_url = urlparse(category_page.url)
 
-async def select_product(category_page, product):
-    link_tag = await product.query_selector('a.a-link-normal')
-    await link_tag.click()
-    await category_page.wait_for_load_state('load')
-    await category_page.screenshot(path="amazon-product_1.png")
-    # Parse the URL
-    parsed_url = urlparse(category_page.url)
-
-    # Extract the useful part (without query parameters)
-    useful_part = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
-    global product_page_url
-    product_page_url = useful_part
+#     # Extract the useful part (without query parameters)
+#     useful_part = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
+#     global product_page_url
+#     product_page_url = useful_part
