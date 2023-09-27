@@ -26,7 +26,16 @@ function searchProductName(productName) {
             return response.json();
         })
         .then(data => {
-            console.log("Scraping response:", data);
+            // Update the HTML content with the received JSON data
+            const productList = document.getElementById("productList");
+            productList.innerHTML = "";
+            console.log(data.products.product_title);
+            // Iterate over the products and create list items
+            data.products.forEach(product =>{
+                const listItem = document.createElement("li");
+                listItem.textContent = product;
+                productList.appendChild(listItem);
+            });
         })
         .catch(error => {
             console.error("Error:", error);
