@@ -62,7 +62,7 @@ async def main(url, search_text):
         await stealth_async(page)
         await page.goto(url, timeout=300000)
         search_page = await search(metadata, page, search_text)
-        await search_page.screenshot(path="amazon-product.png")
+        # await search_page.screenshot(path="amazon-product.png")
         return await get_products(page)
     
         # max_retries = 5
@@ -150,9 +150,12 @@ async def get_products(page):
         span_tag = await product.query_selector('span.a-size-medium.a-color-base.a-text-normal')
         span_text = await span_tag.inner_text()
         data_asin = await product.get_attribute('data-asin')
+        img_selector = await product.query_selector('img.s-image')
+        img_src = await img_selector.get_attribute('src')
         product_info = {
             "product_title" : span_text,
-            "product_id" : data_asin
+            "product_id" : data_asin,
+            "product_img_url" : img_src
         }
         arr_products.append(product_info)
         # await select_product(page, product)
@@ -170,3 +173,6 @@ async def get_products(page):
 #     useful_part = f"{parsed_url.scheme}://{parsed_url.netloc}{parsed_url.path}"
 #     global product_page_url
 #     product_page_url = useful_part
+
+
+#asyncio.run(main("https://www.amazon.com", "CPU Gaming Processor"))
