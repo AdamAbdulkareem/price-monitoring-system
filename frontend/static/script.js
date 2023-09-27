@@ -29,12 +29,22 @@ function searchProductName(productName) {
             // Update the HTML content with the received JSON data
             const productList = document.getElementById("productList");
             productList.innerHTML = "";
-            console.log(data.products.product_title);
             // Iterate over the products and create list items
             data.products.forEach(product =>{
                 const listItem = document.createElement("li");
-                listItem.textContent = product;
+
+                // Create an image element
+                const image = document.createElement("img");
+                image.src = product.product_img_url;
+                // Create a span element for the product title
+                const titleSpan = document.createElement("span");
+                titleSpan.textContent = product.product_title;
+
+                listItem.appendChild(image);
+                listItem.appendChild(titleSpan);
+
                 productList.appendChild(listItem);
+
             });
         })
         .catch(error => {
