@@ -45,90 +45,88 @@ def check_date():
     current_time = datetime.now().strftime("%H:%M:%S %p")
     return current_date, current_time
 
+
 async def main(url, search_text):
     global soup, page 
     urls_metadata = {
-    url: {
-        "search_field_query": 'input[name="field-keywords"]',
-        "search_button_query": 'input[value="Go"]',
-        "product_selector": "div.s-card-container"
-    }
-}
+        url: {
+            "search_field_query": 'input[name="field-keywords"]',
+            "search_button_query": 'input[value="Go"]',
+            "product_selector": "div.s-card-container"
+            }
+        }
     
     metadata = urls_metadata.get(url)
     async with async_playwright() as pw:
-        browser = await pw.chromium.launch(headless=True)
-        page = await browser.new_page()
-        await stealth_async(page)
-        await page.goto(url, timeout=300000)
-        search_page = await search(metadata, page, search_text)
-        # await search_page.screenshot(path="amazon-product.png")
-        return await get_products(page)
-    
-        # max_retries = 5
-        # retry_count = 0
-
-        # while retry_count < max_retries:
-        #     try:
-        #         # Send an HTTP GET request to the specified URL with the headers
-        #         page = requests.get(product_page_url, headers=headers)
-                
-        #         # Parse the HTML content of the page using BeautifulSoup
-        #         soup = BeautifulSoup(page.content, "html.parser")
-            
-        #         product_title = check_product_title(soup, page)
-        #         product_id = check_product_id(soup)
-        #         price = check_price(soup)
-        #         date_info = check_date()
-
-        #         # Check if product_id and product_title are not None or empty
-        #         if product_title is not None and product_id:
-        #             break  # Break out of the loop if both values are valid
-
-        #         # If either product_id or product_title is None or empty, retry
-        #         retry_count += 1
-        #     except Exception as e:
-        #         print(f"An error occurred: {str(e)}")
-        #         retry_count += 1
-
-        # if retry_count >= max_retries:
-        #     print("Max retries reached. Unable to fetch valid product information.")
-
-        # This function save the product info to a json file
-        # def save_to_file():
-        #     product_data = {
-        #         "ProductName": product_title,
-        #         "ProductId": product_id,
-        #         "Price": price,
-        #         "Date_Time": date_info,
-        #     }
-            
-        #     try:
-        #         # Try to read the existing JSON data from the file
-        #         with open("product_data.json", mode="r", encoding="utf-8") as json_file:
-        #             data = json.load(json_file)
-        #     except FileNotFoundError:
-        #         # If the file doesn't exist (first time), initialize an empty dictionary
-        #         data = {}
+            browser = await pw.chromium.launch(headless=True)
+            page = await browser.new_page()
+            await stealth_async(page)
+            await page.goto(url, timeout=300000)
+            await search(metadata, page, search_text)
+            return await get_products(page)
         
-        #     except json.JSONDecodeError:
-        #         # If there's an error in decoding the JSON, handle it appropriately
-        #         print("Error: Unable to decode the existing JSON data")
-        #         return
-    
-        #     # Update the data with the new product_data
-        #     data[product_id] = product_data
+async def select_product(product_page_url):
+    max_retries = 5
+    retry_count = 0
 
-        #     try:
-        #         # Write the updated data back to the file
-        #         with open("product_data.json", mode="w", encoding="utf-8") as json_file:
-        #             json.dump(data, json_file)
-            
-        #     except Exception as e:
-        #         # Handle any unexpected errors during file writing
-        #         print("Error: Unable to write to product_data.json:", e)
+    while retry_count < max_retries:
+        try:
+            # Send an HTTP GET request to the specified URL with the headers
+            page = requests.get(product_page_url, headers=headers)
                 
-        # save_to_file()
+            # Parse the HTML content of the page using BeautifulSoup
+            soup = BeautifulSoup(page.content, "html.parser")
+            
+            product_title = check_product_title(soup, page)
+            product_id = check_product_id(soup)
+            price = check_price(soup)
+            date_info = check_date()
+
+            # Check if product_id and product_title are not None or empty
+            if product_title is not None and product_id:
+                # This function save the product info to a json file
+                def save_to_file():
+                    product_data = {
+                        "ProductName": product_title,
+                        "ProductId": product_id,
+                        "Price": price,
+                        "Date_Time": date_info,
+                    }
+            
+                    try:
+                    # Try to read the existing JSON data from the file
+                        with open("product_data.json", mode="r", encoding="utf-8") as json_file:
+                            data = json.load(json_file)
+                    except FileNotFoundError:
+                    # If the file doesn't exist (first time), initialize an empty dictionary
+                        data = {}
+        
+                    except json.JSONDecodeError:
+                        # If there's an error in decoding the JSON, handle it appropriately
+                        print("Error: Unable to decode the existing JSON data")
+                        return
+    
+                    # Update the data with the new product_data
+                    data[product_id] = product_data
+
+                    try:
+                        # Write the updated data back to the file
+                        with open("product_data.json", mode="w", encoding="utf-8") as json_file:
+                            json.dump(data, json_file)
+            
+                    except Exception as e:
+                        # Handle any unexpected errors during file writing
+                        print("Error: Unable to write to product_data.json:", e)
+                
+                save_to_file()
+                break  # Break out of the loop if both values are valid
+
+            # If either product_id or product_title is None or empty, retry
+            retry_count += 1
+        
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+            retry_count += 1
 
 async def search(metadata, page, search_text):
     search_field_query = metadata.get("search_field_query")
@@ -158,7 +156,6 @@ async def get_products(page):
             "product_img_url" : img_src
         }
         arr_products.append(product_info)
-        # await select_product(page, product)
     return arr_products
 
 # async def select_product(category_page, product):
